@@ -20,9 +20,9 @@ def toggle_lights(state, room):
     log.info("Toggling lights in {}".format(room))
     # TODO - put in energenie code.
     for attempt in range(3):
-        log.info("Attempt {} of 3: Sending '{}' command to switch..."
-                 .format(attempt, state))
         for sock in client_map.get(room):
+            log.info("Attempt {} of 3: Sending '{}' command to switch {}..."
+                     .format(attempt, state, sock))
             if state == 'on':
                 switch_on(sock)
             elif state == 'off':
