@@ -1,4 +1,5 @@
 """Lightcontroller server allows licnets to register for lights to control."""
+import os
 import logging
 from redis import Redis
 from rq import Queue
@@ -33,7 +34,8 @@ class LightController(Thread):
         """Init."""
         Thread.__init__(self, *args, **kwargs)
         self.queues = {}
-        self.conn = Redis()
+        self.conn = Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'), 
+                          password=os.getenv('REDIS_PASSWORD'))
         for room in ROOMS:
             self.queues[room] = Queue(room, connection=self.conn)
 
@@ -65,16 +67,10 @@ def toggle(room, state):
 
 def start_controller():
     """Proc to start controller thread."""
-    log.debug('Starting LightController...')
+    log.info('Starting LightController...')
     lc = LightController()
     lc.run()
-    logging.debug('Stopping LightController...')
-
-
-def main():
-    """Main method. Starts server and LC thread."""
-    start_controller()
 
 
 if __name__ == '__main__':
-    main()
+    start_controller()
