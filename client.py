@@ -24,7 +24,7 @@ def toggle_lights(state, room):
                  .format(attempt, state))
         for sock in client_map.get(room):
             if state == 'on':
-                switch_on(client_map.get(room))
+                switch_on(sock)
             elif state == 'off':
-                switch_off(client_map.get(room))
+                switch_off(sock)
             time.sleep(1)
