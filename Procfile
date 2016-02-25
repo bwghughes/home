@@ -1,2 +1,2 @@
-server: python server.py
-client: python client.py
+web: gunicorn server:app
+lc_controller: python server.py

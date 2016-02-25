@@ -1,15 +1,23 @@
 """Lightcontroller server allows licnets to register for lights to control."""
-import time
 import logging
-
 from redis import Redis
 from rq import Queue
+from threading import Thread
+from flask import Flask, render_template, jsonify
+from flask_bootstrap import Bootstrap
+
+app = Flask(__name__)
+Bootstrap(app)
+
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
-class LightController(object):
+ROOMS = ['kitchen', 'lounge', 'bedroom']
+
+
+class LightController(Thread):
     """Lightcontroller object."""
 
     _instance = None
@@ -23,31 +31,49 @@ class LightController(object):
 
     def __init__(self, *args, **kwargs):
         """Init."""
-        log.info("Initliazing....")
-        self.q = Queue(connection=Redis())
-        self.clients = []
+        Thread.__init__(self, *args, **kwargs)
+        self.queues = {}
+        self.conn = Redis()
+        for room in ROOMS:
+            self.queues[room] = Queue(room, connection=self.conn)
 
-    def register(self, client):
-        """Register clients."""
-        log.info("Register client {}".format(client))
-        self.clients.append(client)
-        pass
-
-    def publish(self, room):
+    def toggle(self, state, room):
         """Queue messages."""
-        self.q.enqueue('client.toggle_lights', 'lounge')
+        self.queues.get(room).enqueue('client.toggle_lights', state, room)
 
     def run(self):
         """Run the server."""
+        log.info("LightController server running...")
         while True:
-            log.info("Checking for events...")
-            time.sleep(1)
+            pass
+
+
+@app.route("/")
+def hello():
+    """Index."""
+    return render_template('index.html', rooms=ROOMS)
+
+
+@app.route("/<room>/toggle/<state>", methods=['POST'])
+def toggle(room, state):
+    """Toggle."""
+    log.info('Recieved toggle request for {}'.format(room))
+    lc = LightController()
+    lc.toggle(state, room)
+    return jsonify(dict(status='OK'))
+
+
+def start_controller():
+    """Proc to start controller thread."""
+    log.debug('Starting LightController...')
+    lc = LightController()
+    lc.run()
+    logging.debug('Stopping LightController...')
 
 
 def main():
-    """Main method."""
-    lc = LightController()
-    lc.run()
+    """Main method. Starts server and LC thread."""
+    start_controller()
 
 
 if __name__ == '__main__':
