@@ -1,14 +1,8 @@
 """Client for toggling lights."""
-import os
 import time
-import redis
 import logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-
-r = redis.Redis(os.getenv('REDIS_URL'))
-client_map = r.hgetall('keymap')
 
 
 try:
@@ -25,15 +19,15 @@ except ImportError:
         pass
 
 
-def toggle_lights(state, room):
+def toggle_lights(key, state):
     """Toggle lights."""
-    log.info("Toggling lights in {}".format(room))
+    log.info("Toggling lights {} for key {}".format(state, key))
 
     for attempt in range(3):
         log.info("Attempt {} of 3: Sending '{}' command to switch {}..."
-                 .format(attempt, state))
+                 .format(attempt, state, key))
         if state == 'on':
-            switch_on(client_map.get(room))
+            switch_on(key)
         elif state == 'off':
-            switch_off(client_map.get(room))
+            switch_off(key)
         time.sleep(1)

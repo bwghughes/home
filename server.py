@@ -4,7 +4,7 @@ import logging
 from redis import Redis
 from rq import Queue
 from threading import Thread
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify
 from flask_bootstrap import Bootstrap
 
 app = Flask(__name__)
@@ -34,14 +34,13 @@ class LightController(Thread):
         """Init."""
         Thread.__init__(self, *args, **kwargs)
         self.queues = {}
-        self.conn = Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'), 
+        self.conn = Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'),
                           password=os.getenv('REDIS_PASSWORD'))
-        for room in ROOMS:
-            self.queues[room] = Queue(room, connection=self.conn)
+        self.queue = Queue('lights', connection=self.conn)
 
-    def toggle(self, state, room):
+    def toggle(self, key, state):
         """Queue messages."""
-        self.queues.get(room).enqueue('client.toggle_lights', state, room)
+        self.queue.enqueue('client.toggle_lights', key, state)
 
     def run(self):
         """Run the server."""
@@ -50,18 +49,12 @@ class LightController(Thread):
             pass
 
 
-@app.route("/")
-def hello():
-    """Index."""
-    return render_template('index.html', rooms=ROOMS)
-
-
-@app.route("/<room>/toggle/<state>", methods=['POST'])
-def toggle(room, state):
+@app.route("/<key>/<state>", methods=['POST'])
+def toggle(key, state):
     """Toggle."""
-    log.info('Recieved toggle request for {}'.format(room))
+    log.info('Recieved toggle request for {}'.format(key))
     lc = LightController()
-    lc.toggle(state, room)
+    lc.toggle(key, state)
     return jsonify(dict(status='OK'))
 
 
