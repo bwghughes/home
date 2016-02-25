@@ -12,19 +12,19 @@ except ImportError:
     switch_off = lambda x: x
 
 
-client_map = {'kitchen': [2], 'lounge': [2, 3]}
+client_map = {'kitchen': 2, 'lounge': 3}
 
 
 def toggle_lights(state, room):
     """Toggle lights."""
     log.info("Toggling lights in {}".format(room))
     # TODO - put in energenie code.
+
     for attempt in range(3):
-        for sock in client_map.get(room):
-            log.info("Attempt {} of 3: Sending '{}' command to switch {}..."
-                     .format(attempt, state, sock))
-            if state == 'on':
-                switch_on(sock)
-            elif state == 'off':
-                switch_off(sock)
-            time.sleep(1)
+        log.info("Attempt {} of 3: Sending '{}' command to switch {}..."
+                 .format(attempt, state, sock))
+        if state == 'on':
+            switch_on(sock)
+        elif state == 'off':
+            switch_off(sock)
+        time.sleep(1)
